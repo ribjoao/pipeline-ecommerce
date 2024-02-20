@@ -1,0 +1,54 @@
+
+services:
+
+  pg-database:
+    image: postgres:13
+    container_name: postgres_2 ##
+    hostname: postgres_2 #
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./ecommerce_data:/var/lib/postgresql/data:rw
+    ports:
+      - 5431:5432
+    networks:
+      - airflow
+
+  pg-admin:
+    image: dpage/pgadmin4
+    container_name: pg-admin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - 1111:80
+    networks:
+      - airflow
+
+  # metabase-app:
+  #   image: metabase/metabase
+  #   container_name: metabase
+  #   hostname: metabase
+  #   ports:
+  #     - 3001:3000
+  #   volumes:
+  #     # declare your mount volume /host/dir:/container/dir
+  #     - /home/app/metabase-data:/metabase-data
+  #   environment:
+  #     MB_DB_TYPE: postgres
+  #     MB_DB_DBNAME: metabase
+  #     MB_DB_PORT: 5432
+  #     MB_DB_USER: root
+  #     MB_DB_PASS: root
+  #     MB_DB_HOST: postgres
+  #   depends_on:
+  #     - pg-database
+  #   links:
+  #     - pg-database
+
+networks:
+  airflow:
+    external:
+      name: airflow_default
