@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
 import os
@@ -38,13 +38,13 @@ orders_kwargs= dict(query_path = os.environ.get('PATH_ORDERS'),
 orders_kwargs.update(source_kwargs)
 orders_kwargs.update(target_kwargs)
 
-# # #  Order items args
-# order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
-#                     target_schema = os.environ.get('ORDER_ITEMS_SCHEMA'),
-#                     target_table = os.environ.get('ORDER_ITEMS_TABLE')
-# )
-# order_items_kwargs.update(source_kwargs)
-# order_items_kwargs.update(target_kwargs)
+# #  Order items args
+order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
+                    target_schema = os.environ.get('ORDER_ITEMS_SCHEMA'),
+                    target_table = os.environ.get('ORDER_ITEMS_TABLE')
+)
+order_items_kwargs.update(source_kwargs)
+order_items_kwargs.update(target_kwargs)
 
 # DAG ----------
 default_args = {
@@ -54,10 +54,10 @@ default_args = {
 }
 
 local_workflow = DAG(
-    "ingest_incremental_query",
+    "ingest_incremental_e-commerce",
     schedule_interval="0 0 * * *",
-    start_date= datetime(2018,8,1),
-    end_date = datetime(2018,8,3),
+    start_date= datetime(2018,4,1),
+    end_date = datetime(2018,6,30),
     catchup=True,
     max_active_runs=1,
     default_args=default_args
@@ -66,25 +66,41 @@ local_workflow = DAG(
 
 with local_workflow:
     
-    init = DummyOperator(
-        task_id='init_ingestion'
+    init = BashOperator(
+        task_id="start_data_ingestion",
+        bash_command='echo "start_ingestion_date={{ ds }}"'
     )
     
-    extract_database_task = PythonOperator(
-        task_id='extract_from_database_orders',
+    extract_orders = PythonOperator(
+        task_id='extract_from_db_orders',
         python_callable=extract_from_database_incremental,
-        provide_context=True,
         op_kwargs=orders_kwargs
     )
     
-    load_database_task = PythonOperator(
+    extract_order_items = PythonOperator(
+        task_id='extract_from_db_order_items',
+        python_callable=extract_from_database_incremental,
+        op_kwargs=order_items_kwargs
+    )
+    
+    load_stg_orders = PythonOperator(
         task_id ='load_to_staging_orders',
         python_callable= load_to_database_incremental,
         op_kwargs=orders_kwargs
     )
     
-    final = DummyOperator(
-        task_id='final_ingestion'
+    load_stg_order_items = PythonOperator(
+    task_id ='load_to_staging_order_items',
+    python_callable= load_to_database_incremental,
+    op_kwargs=order_items_kwargs
     )
     
-    init >> extract_database_task >> load_database_task >> final
+    finish = BashOperator(
+        task_id="finish_data_ingestion",
+        bash_command='echo "finish_ingestion_date={{ ds }}"'
+    )
+    
+    init
+    extract_orders >> load_stg_orders
+    extract_order_items >> load_stg_order_items
+    [load_stg_orders, load_stg_order_items] >> finish

@@ -15,6 +15,7 @@ def extract_from_database_incremental(ti,**kwargs):
     host = kwargs.get('source_host')
     port = kwargs.get('source_port')
     db = kwargs.get('source_db')
+    table = kwargs.get('target_table')
 
     # Create Engine function ...
     logging.info("Create engine ...")
@@ -54,7 +55,7 @@ def extract_from_database_incremental(ti,**kwargs):
     
     logging.info("dataframe info:",df.info)
     
-    ti.xcom_push(key='df_extract', value=df)
+    ti.xcom_push(key=f'df_extract_{table}', value=df)
 
 def load_to_database_incremental(ti,**kwargs):
     
@@ -100,7 +101,7 @@ def load_to_database_incremental(ti,**kwargs):
             try:
                 schema_query = f'CREATE SCHEMA IF NOT EXISTS {schema}'
                 conn.execute(schema_query)
-                logging.info(f"Schema {schema} Created!")
+                logging.info(f"Schema '{schema}' ok!")
             except Exception as except_schemadb:
                 logging.info("Schemadb Exception =",except_schemadb)
                 logging.info("Created schema ERROR!")
@@ -108,7 +109,7 @@ def load_to_database_incremental(ti,**kwargs):
             # Insert structure table if not exists
             logging.info(f"Insert table structure '{table}' in schema:'{schema}'...")
             
-            df = ti.xcom_pull(key='df_incremental')
+            df = ti.xcom_pull(key=f'df_extract_{table}')
             df.head(n=0).to_sql(name=table,schema = schema, con=engine, if_exists='replace')
             
             logging.info(f"Table '{table}' created!")
@@ -122,7 +123,7 @@ def load_to_database_incremental(ti,**kwargs):
         t_start = time()
         logging.info("Populate table ...")
         
-        df = ti.xcom_pull(key='df_extract')
+        df = ti.xcom_pull(key=f'df_extract_{table}')
         df.to_sql(name=table, schema =schema, con=engine, if_exists='append',index=False)
             
         t_end = time()
