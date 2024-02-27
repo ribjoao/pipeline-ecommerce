@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+    - name: ecommerce
+      database: ecommerce
+      schema: ecommerce
+
+      tables:
+        - name: orders
+        - name: order_items
+        - name: order_payments
+
+
+
