@@ -1,0 +1,22 @@
+services:
+
+    dbt-pg-ecomm:
+      build:
+        context: .
+        target: dbt-postgres
+      image: dbt/postgres
+      volumes:
+        - .:/usr/app
+        - ~/.dbt/:/root/.dbt/
+      networks:
+        - airflow
+      #network_mode: host
+
+networks:
+  airflow:
+    name: airflow_default
+    external: true
+  # airflow:
+  #   external:
+  #     name: airflow_default
+
