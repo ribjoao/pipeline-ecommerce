@@ -1,18 +1,21 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.providers.docker.operators.docker import DockerOperator
 
 import os
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
+from docker.types import Mount
 
 from dependencies.ingest import extract_from_database_incremental
 from dependencies.ingest import load_to_database_incremental
 
 ## Environment variables ---------------
 load_dotenv()
-
+DBT_PROJECT = os.environ.get('DBT_PROJECT')
+DBT_PROFILES = os.environ.get('DBT_PROFILES')
 
 # Source database
 source_kwargs= dict(source_host = os.environ.get('SOURCE_HOST'),
@@ -48,6 +51,12 @@ order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
 order_items_kwargs.update(source_kwargs)
 order_items_kwargs.update(target_kwargs)
 
+# DBT docker
+DBT_PROJECT = os.environ.get('DBT_PROJECT')
+DBT_PROFILES = os.environ.get('DBT_PROFILES')
+
+
+
 ###  DAG ----------------------------
 default_args = {
     'owner': 'pipeline-ecommerce',
@@ -56,10 +65,10 @@ default_args = {
 }
 
 local_workflow = DAG(
-    "ingest_incremental",
+    "ecommerce_incremental",
     schedule_interval="0 0 * * *",
-    start_date= datetime(2018,5,1),
-    end_date = datetime(2018,5,1),
+    start_date= datetime(2018,8,20),
+    end_date= datetime(2018,10,20),
     catchup=True,
     max_active_runs=1,
     default_args=default_args
@@ -68,7 +77,7 @@ local_workflow = DAG(
 
 with local_workflow:
     
-    init = BashOperator(
+    init_ingestion = BashOperator(
         task_id="start_data_ingestion",
         bash_command='echo "start_ingestion_date={{ ds }}"'
     )
@@ -97,12 +106,29 @@ with local_workflow:
     op_kwargs=order_items_kwargs
     )
     
-    finish = BashOperator(
+    finish_ingestion = BashOperator(
         task_id="finish_data_ingestion",
         bash_command='echo "finish_ingestion_date={{ ds }}"'
     )
     
-    init
+    dbt_task = DockerOperator(
+        task_id='dbt_build',
+        image='dbt/postgres',
+        container_name='dbt_debug_docker',
+        command="bash -c 'dbt build'",
+        docker_url='tcp://docker-proxy:2375',
+        network_mode='airflow_default',
+        auto_remove=True,
+        mounts = [Mount(
+            source=DBT_PROJECT, target="//usr/app/dbt", type="bind"),
+            Mount(
+            source=DBT_PROFILES,target="/root/.dbt/",type="bind")],
+        mount_tmp_dir = False
+    )
+    
+    init_ingestion
     extract_orders >> load_stg_orders
     extract_order_items >> load_stg_order_items
-    [load_stg_orders, load_stg_order_items] >> finish
+    [load_stg_orders, load_stg_order_items] >> finish_ingestion
+    finish_ingestion >> dbt_task
+    
