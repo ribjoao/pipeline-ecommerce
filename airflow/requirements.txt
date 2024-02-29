@@ -1,1 +1,3 @@
 pyarrow
+apache-airflow-providers-docker
+docker
