@@ -31,8 +31,3 @@ orders as (
 )
 
 select * from orders
-
-
-
-
-

@@ -41,7 +41,6 @@
 #                                A better way is to build a custom image or extend the official image
 #                                as described in https://airflow.apache.org/docs/docker-stack/build.html.
 #                                Default: ''
-#
 # Feel free to modify this file to suit your needs.
 ---
 x-airflow-common:
@@ -70,13 +69,7 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
-
-    PG_HOST: ${PG_HOST}
-    PG_USER: ${PG_USER}
-    PG_PASSWORD: ${PG_PASSWORD}
-    PG_PORT: ${PG_PORT}
-    PG_DATABASE: ${PG_DATABASE}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-apache-airflow-providers-docker}
 
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
@@ -215,10 +208,21 @@ services:
       - bash
       - -c
       - airflow
+      
+  docker-proxy:
+    image: bobrik/socat
+    command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
+    ports:
+      - "2376:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - //home/ribjoao/desktop/projetos_portfolio/pipeline-ecommerce/dbt-ecommerce/dbt/ecommerce://usr/app/dbt
+      - ~/.dbt/:/root/.dbt/
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
   # See: https://docs.docker.com/compose/profiles/
+
 
 volumes:
   postgres-db-volume:
