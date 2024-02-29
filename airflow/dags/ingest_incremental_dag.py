@@ -4,13 +4,15 @@ from airflow.operators.python import PythonOperator
 
 import os
 from datetime import datetime, timedelta
+
 from dotenv import load_dotenv
 
 from dependencies.ingest import extract_from_database_incremental
 from dependencies.ingest import load_to_database_incremental
 
-# Environment variables
+## Environment variables ---------------
 load_dotenv()
+
 
 # Source database
 source_kwargs= dict(source_host = os.environ.get('SOURCE_HOST'),
@@ -28,7 +30,7 @@ target_kwargs= dict(target_host = os.environ.get('TARGET_HOST'),
                     target_db = os.environ.get('TARGET_DATABASE')
 )
 
-# Schema and tables ----------
+## Schema and tables 
 
 # Orders table args
 orders_kwargs= dict(query_path = os.environ.get('PATH_ORDERS'),
@@ -38,7 +40,7 @@ orders_kwargs= dict(query_path = os.environ.get('PATH_ORDERS'),
 orders_kwargs.update(source_kwargs)
 orders_kwargs.update(target_kwargs)
 
-# #  Order items args
+# Order items args 
 order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
                     target_schema = os.environ.get('ORDER_ITEMS_SCHEMA'),
                     target_table = os.environ.get('ORDER_ITEMS_TABLE')
@@ -46,7 +48,7 @@ order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
 order_items_kwargs.update(source_kwargs)
 order_items_kwargs.update(target_kwargs)
 
-# DAG ----------
+###  DAG ----------------------------
 default_args = {
     'owner': 'pipeline-ecommerce',
     'retries': 1,

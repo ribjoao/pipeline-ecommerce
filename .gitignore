@@ -3,6 +3,7 @@
 **.venv
 *-env/
 dev/
+tmp
 
 #Binaries
 *data/
