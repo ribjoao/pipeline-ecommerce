@@ -6,13 +6,13 @@ import os
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
+from docker.types import Mount
 
 from dependencies.ingest import extract_from_database_incremental
 from dependencies.ingest import load_to_database_incremental
 
 ## Environment variables ---------------
 load_dotenv()
-
 
 # Source database
 source_kwargs= dict(source_host = os.environ.get('SOURCE_HOST'),
@@ -30,37 +30,28 @@ target_kwargs= dict(target_host = os.environ.get('TARGET_HOST'),
                     target_db = os.environ.get('TARGET_DATABASE')
 )
 
-## Schema and tables 
-
-# Orders table args
-orders_kwargs= dict(query_path = os.environ.get('PATH_ORDERS'),
-                    target_schema = os.environ.get('ORDERS_SCHEMA'),
-                    target_table = os.environ.get('ORDERS_TABLE')
+# table - INSERT HERE!!---------------------------
+table = 'sellers'
+table_kwargs= dict(query_path = os.environ.get('PATH_SELLERS'),
+                    target_schema = os.environ.get('SELLERS_SCHEMA'),
+                    target_table = os.environ.get('SELLERS_TABLE')
 )
-orders_kwargs.update(source_kwargs)
-orders_kwargs.update(target_kwargs)
+table_kwargs.update(source_kwargs)
+table_kwargs.update(target_kwargs)
 
-# Order items args 
-order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
-                    target_schema = os.environ.get('ORDER_ITEMS_SCHEMA'),
-                    target_table = os.environ.get('ORDER_ITEMS_TABLE')
-)
-order_items_kwargs.update(source_kwargs)
-order_items_kwargs.update(target_kwargs)
 
 ###  DAG ----------------------------
 default_args = {
     'owner': 'pipeline-ecommerce',
     'retries': 1,
-    'retry_delay': timedelta(minutes=3)
+    'retry_delay': timedelta(minutes=3),
 }
 
 local_workflow = DAG(
-    "ingest_incremental",
+    "ingest_table_incremental",
     schedule_interval="0 0 * * *",
-    start_date= datetime(2018,5,1),
-    end_date = datetime(2018,5,1),
-    catchup=True,
+    start_date= datetime(2024,3,2),
+    catchup=False,
     max_active_runs=1,
     default_args=default_args
 
@@ -68,41 +59,27 @@ local_workflow = DAG(
 
 with local_workflow:
     
-    init = BashOperator(
+    init_ingestion = BashOperator(
         task_id="start_data_ingestion",
         bash_command='echo "start_ingestion_date={{ ds }}"'
     )
     
-    extract_orders = PythonOperator(
-        task_id='extract_from_db_orders',
+    extract_table = PythonOperator(
+        task_id=f'extract_from_db_{table}',
         python_callable=extract_from_database_incremental,
-        op_kwargs=orders_kwargs
+        op_kwargs=table_kwargs
     )
-    
-    extract_order_items = PythonOperator(
-        task_id='extract_from_db_order_items',
-        python_callable=extract_from_database_incremental,
-        op_kwargs=order_items_kwargs
-    )
-    
-    load_stg_orders = PythonOperator(
-        task_id ='load_to_staging_orders',
+
+    load_stg_table = PythonOperator(
+        task_id =f'load_to_staging_{table}',
         python_callable= load_to_database_incremental,
-        op_kwargs=orders_kwargs
-    )
+        op_kwargs=table_kwargs
+    )   
     
-    load_stg_order_items = PythonOperator(
-    task_id ='load_to_staging_order_items',
-    python_callable= load_to_database_incremental,
-    op_kwargs=order_items_kwargs
-    )
-    
-    finish = BashOperator(
+    finish_ingestion = BashOperator(
         task_id="finish_data_ingestion",
         bash_command='echo "finish_ingestion_date={{ ds }}"'
     )
     
-    init
-    extract_orders >> load_stg_orders
-    extract_order_items >> load_stg_order_items
-    [load_stg_orders, load_stg_order_items] >> finish
+    init_ingestion >> extract_table >> load_stg_table >> finish_ingestion 
+    
