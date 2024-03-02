@@ -51,6 +51,30 @@ order_items_kwargs= dict(query_path = os.environ.get('PATH_ORDER_ITEMS'),
 order_items_kwargs.update(source_kwargs)
 order_items_kwargs.update(target_kwargs)
 
+# Order payments args 
+order_payments_kwargs= dict(query_path = os.environ.get('PATH_ORDER_PAYMENTS'),
+                    target_schema = os.environ.get('ORDER_PAYMENTS_SCHEMA'),
+                    target_table = os.environ.get('ORDER_PAYMENTS_TABLE')
+)
+order_payments_kwargs.update(source_kwargs)
+order_payments_kwargs.update(target_kwargs)
+
+# Customers args
+customers_kwargs= dict(query_path = os.environ.get('PATH_CUSTOMERS'),
+                    target_schema = os.environ.get('CUSTOMERS_SCHEMA'),
+                    target_table = os.environ.get('CUSTOMERS_TABLE')
+)
+customers_kwargs.update(source_kwargs)
+customers_kwargs.update(target_kwargs)
+
+# Order Reviews args
+order_reviews_kwargs= dict(query_path = os.environ.get('PATH_REVIEWS'),
+                    target_schema = os.environ.get('REVIEWS_SCHEMA'),
+                    target_table = os.environ.get('REVIEWS_TABLE')
+)
+order_reviews_kwargs.update(source_kwargs)
+order_reviews_kwargs.update(target_kwargs)
+
 # DBT docker
 DBT_PROJECT = os.environ.get('DBT_PROJECT')
 DBT_PROFILES = os.environ.get('DBT_PROFILES')
@@ -61,14 +85,14 @@ DBT_PROFILES = os.environ.get('DBT_PROFILES')
 default_args = {
     'owner': 'pipeline-ecommerce',
     'retries': 1,
-    'retry_delay': timedelta(minutes=3)
+    'retry_delay': timedelta(minutes=3),
 }
 
 local_workflow = DAG(
     "ecommerce_incremental",
     schedule_interval="0 0 * * *",
     start_date= datetime(2018,8,20),
-    end_date= datetime(2018,10,20),
+    end_date= datetime(2018,8,31),
     catchup=True,
     max_active_runs=1,
     default_args=default_args
@@ -94,6 +118,23 @@ with local_workflow:
         op_kwargs=order_items_kwargs
     )
     
+    extract_order_payments = PythonOperator(
+        task_id='extract_from_db_order_payments',
+        python_callable=extract_from_database_incremental,
+        op_kwargs=order_payments_kwargs
+    )
+    
+    extract_customers = PythonOperator(
+        task_id='extract_from_db_customers',
+        python_callable=extract_from_database_incremental,
+        op_kwargs=customers_kwargs
+    )
+    
+    extract_order_reviews = PythonOperator(
+        task_id='extract_from_db_order_reviews',
+        python_callable=extract_from_database_incremental,
+        op_kwargs=order_reviews_kwargs
+    )
     load_stg_orders = PythonOperator(
         task_id ='load_to_staging_orders',
         python_callable= load_to_database_incremental,
@@ -101,10 +142,28 @@ with local_workflow:
     )
     
     load_stg_order_items = PythonOperator(
-    task_id ='load_to_staging_order_items',
-    python_callable= load_to_database_incremental,
-    op_kwargs=order_items_kwargs
+        task_id ='load_to_staging_order_items',
+        python_callable= load_to_database_incremental,
+        op_kwargs=order_items_kwargs
     )
+    
+    load_stg_order_payments = PythonOperator(
+        task_id ='load_to_staging_order_payments',
+        python_callable= load_to_database_incremental,
+        op_kwargs=order_payments_kwargs
+    )
+    
+    load_stg_customers = PythonOperator(
+        task_id ='load_to_staging_customers',
+        python_callable= load_to_database_incremental,
+        op_kwargs=customers_kwargs
+    )
+    
+    load_stg_order_reviews = PythonOperator(
+        task_id ='load_to_staging_order_reviews',
+        python_callable= load_to_database_incremental,
+        op_kwargs=order_reviews_kwargs
+    )   
     
     finish_ingestion = BashOperator(
         task_id="finish_data_ingestion",
@@ -112,10 +171,10 @@ with local_workflow:
     )
     
     dbt_task = DockerOperator(
-        task_id='dbt_build',
+        task_id='dbt_run',
         image='dbt/postgres',
-        container_name='dbt_debug_docker',
-        command="bash -c 'dbt build'",
+        container_name='dbt_docker',
+        command="bash -c 'dbt run'",
         docker_url='tcp://docker-proxy:2375',
         network_mode='airflow_default',
         auto_remove=True,
@@ -126,9 +185,13 @@ with local_workflow:
         mount_tmp_dir = False
     )
     
-    init_ingestion
-    extract_orders >> load_stg_orders
+    init_ingestion >> extract_orders >> load_stg_orders
     extract_order_items >> load_stg_order_items
-    [load_stg_orders, load_stg_order_items] >> finish_ingestion
+    extract_order_payments >> load_stg_order_payments
+    extract_order_reviews >> load_stg_order_reviews
+    extract_customers >> load_stg_customers
+    [load_stg_orders, load_stg_order_items,
+     load_stg_order_payments, load_stg_order_reviews,
+     load_stg_customers] >> finish_ingestion
     finish_ingestion >> dbt_task
     
