@@ -18,9 +18,11 @@ joined_fact as (
 
     select
         -- surrogate keys
-        {{ dbt_utils.generate_surrogate_key(['orders.order_id','order_item_id']) }} as order_key,
+        {{ dbt_utils.generate_surrogate_key(['orders.order_id','order_item_id']) }} as order_item_key,
         {{ dbt_utils.generate_surrogate_key(['order_purchase']) }} as order_date_key,
-        {{ dbt_utils.generate_surrogate_key(['orders.order_id']) }} as payment_key,
+        {{ dbt_utils.generate_surrogate_key(['orders.customer_id']) }} as customer_key,
+        {{ dbt_utils.generate_surrogate_key(['order_items.product_id']) }} as product_key,
+        {{ dbt_utils.generate_surrogate_key(['order_items.seller_id']) }} as seller_key,
         
         -- keys
         orders.order_id as order_id,
@@ -34,7 +36,7 @@ joined_fact as (
 
     from orders
 
-    join order_items on orders.order_id = order_items.order_id
+    left join order_items on orders.order_id = order_items.order_id
 
 )
 

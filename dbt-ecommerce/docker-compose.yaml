@@ -9,7 +9,7 @@ services:
         - .:/usr/app
         - ~/.dbt/:/root/.dbt/
       networks:
-        - airflow
+         - airflow
       #network_mode: host
 
 networks:
