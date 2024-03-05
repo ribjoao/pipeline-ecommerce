@@ -8,8 +8,6 @@ sources:
       tables:
         - name: orders
         - name: order_items
-        - name: order_payments
-        - name: order_reviews
         - name: customers
         - name: sellers
         - name: products

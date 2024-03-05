@@ -1,7 +1,9 @@
 {{ config(materialized='table')}}
 
 select
+-- surrogate key
     {{ dbt_utils.generate_surrogate_key(['order_purchase']) }} as order_date_key,
+
     order_purchase,
     order_id,
     day,
