@@ -33,7 +33,7 @@ Os dados foram processados em um pipeline “ELT” e armazenados em um Data War
 
 ## Conjunto de dados
 
-Os datasets são oriundos do [**Kaggle**](https://www.kaggle.com/datasets), plataforma que disponibiliza dados abertos para análises de predições.
+Os datasets são oriundos do [**Kaggle**](https://www.kaggle.com/datasets), plataforma que disponibiliza datasets abertos para extração e análises e predições.
 
 Os datasets foram inseridos nas fontes da arquitetura do pipeline, de forma a proporcionar a ingestão de dados.
 
@@ -63,7 +63,7 @@ A arquitetura desenvolvida teve como propósito abordar de forma mais realístic
 
 ## Modelagem de dados
 
-A partir das informações das fontes de dados transacionais, foi realizada a modelagem dimensional em modelo 'star-schema'. A tabela fato e suas dimensões foram projetas para possibilitar a análise e visualizações de métricas gerais do e-commerce.
+A partir das informações das fontes de dados transacionais, foi realizada a modelagem dimensional em modelo 'star-schema'. A tabela fato e suas dimensões foram projetadas para possibilitar a análise e visualizações de métricas gerais do e-commerce.
 
 ![imagem_dimensional](assets/img/dimensional_case.png)
 
@@ -79,7 +79,7 @@ As tarefas do orquestrador do fluxo de trabalho fundamentaram-se em etapas de ex
 ![imagem_worflow](assets/img/airflow_incremental.png)
 
 ## Transformação de dados
- As transformações dos dados da área de staging para o DW foram realizadas utilizando o dbt(data build tool) para a modelagem dimensional. As transformações em SQL basearam-se em:
+ As transformações dos dados da área de staging para o DW foram realizadas utilizando o **dbt(data build tool)** para realização da modelagem dimensional. As transformações em SQL basearam-se em:
  * Verificação de dados não nulos;
  * Renomear colunas
  * Conversões de tipos de dados/casting;
