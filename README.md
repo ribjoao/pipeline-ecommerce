@@ -29,7 +29,7 @@ Os dados foram processados em um pipeline “ELT” e armazenados em um Data War
 * Modelagem de dados dimensional, 'star-schema', adequadas para consultas e análises da métricas de negócio.
 * Desenvolvimento de ingestão de dados e transformações para o Data Warehouse(DW)
 * Orquestração do fluxo de trabalho da arquitetura de dados
-* Consultas e visualizações
+* Disponibilização dos dados para consultas e visualizações
 
 ## Conjunto de dados
 
