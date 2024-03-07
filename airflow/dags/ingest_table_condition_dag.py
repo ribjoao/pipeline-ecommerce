@@ -48,8 +48,8 @@ default_args = {
 }
 
 local_workflow = DAG(
-    "ingest_table_incremental",
-    schedule_interval="0 0 * * *",
+    "ingest_table",
+    schedule_interval=None,
     start_date= datetime(2024,3,2),
     catchup=False,
     max_active_runs=1,
