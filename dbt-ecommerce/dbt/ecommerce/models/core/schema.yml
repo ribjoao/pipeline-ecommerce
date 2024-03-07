@@ -1,0 +1,74 @@
+version: 2
+
+models:
+
+  - name: fact_orders
+    description: >
+        Pedidos relacionados ao diversos marketplaces da Olist Store.
+        A tabela contém registros para cada item dos pedidos.
+        Os registros possuem identificador único para cada item do pedido (order_item_key) e para cada pedido (order_id)
+    columns:
+      - name: order_date_key
+        description: Chave estrangeira indicando o data do pedido
+        tests:
+          - relationships:
+              to: ref('dim_date_orders')
+              field: order_date_key
+              severity: warn
+      - name: customer_key
+        description: Chave estrangeira indicando o cliente associado ao pedido
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+              severity: warn
+      - name: product_key
+        description: Chave estrangeira indicando o produto do pedido
+        tests:
+          - relationships:
+              to: ref('dim_products')
+              field: product_key
+              severity: warn
+      - name: seller_key
+        description: Chave estrangeira indicando o vendedor do item do pedido
+        tests:
+          - relationships:
+              to: ref('dim_sellers')
+              field: seller_key
+              severity: warn
+      - name: order_id
+        description: Identificação, chave natural do pedido
+      - name: order_status
+        description: Campo atribuído ao status do pedido 'delivered', 'canceled', 'shipped', 'unavailable', 'invoiced'
+      - name: price
+        description: Valor do preço relacionado ao item do pedido
+        tests:
+            - not_null:
+                severity: warn
+      - name: freight_value
+        description: Valor do frete relacionado ao item do pedido
+        tests:
+            - not_null:
+                severity: warn
+
+  - name: dim_customers
+    description: >
+        Lista de clientes relacionados aos pedidos (orders) e campos de localização relacionado ao cliente:
+        prefixo do cep, cidade e estado.
+
+  - name: dim_date_orders
+    description: >
+        Tabela de campos de data e hora discretizados, relacionados a data de solicitação de compra do pedido.(order_purchase_timestamp)
+
+  - name: dim_products
+    description: >
+        Lista de produtos e suas características disponíveis e relacionados aos pedidos dos clientes:
+        nome do produto, quantidade de fotos e dimensões como altura, largura e profundidade.
+        Identificador único para cada produto 'product_key'
+
+  - name: dim_sellers
+    description: >
+        Lista de vendedores do marketplace e campos de localização relacionados ao vendedor:
+        prefixo do cep, cidade e estado. Indentificador único 'seller_key'
+
+      
