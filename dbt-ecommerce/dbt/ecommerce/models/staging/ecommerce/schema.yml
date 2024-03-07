@@ -12,5 +12,40 @@ sources:
         - name: sellers
         - name: products
 
+models:
+    - name: stg_orders
+      description: >
+        Tabela de pedidos da Olist Store, contendo informações de múltiplos pedidos de
+        marketplaces do Brasil. As features permitem observa o pedido de múltiplas dimensões,
+        como status do pedido e timestamps de solicitação, aprovação e logística de entrega do pedido 
+      columns:
+          - name: order_id
+            description: Chave primária "natural' da tabela
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+          - name: customer_id
+            description: Chave estrangeira 'natural' indicando o cliente associado ao pedido
+            tests:
+              - relationships:
+                  to: ref('stg_customers')
+                  field: customer_id
+                  severity: warn
+          - name: order_status
+            description: Campo atribuído ao status do pedido
+                'delivered', 'canceled', 'shipped', 'unavailable', 'invoiced'
+          - name: order_purchase_timestamp 
+            description: Data e hora da solicitação do pedido
+          - name: order_approved_at 
+            description: Data e hora da aprovação do pedido
+          - name: order_delivered_carrier_date 
+            description: Data e hora de postagem para entrega do pedido
+          - name: order_delivered_customer_date
+            description: Data e hora de entrega do pedido ao cliente
+          - name: order_estimated_delivery_date 
+            description: Data e hora estimada de entrega do pedido ao cliente
+            
 
 
