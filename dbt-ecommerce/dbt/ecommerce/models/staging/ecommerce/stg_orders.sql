@@ -1,3 +1,8 @@
+{{
+    config(
+        materialized='incremental'
+    )
+}}
 
 with 
 
@@ -5,7 +10,13 @@ source as (
 
     select *
     from {{ source('ecommerce','orders') }}
-    where order_id is not null
+    {% if is_incremental() %}
+
+    -- this filter will only be applied on an incremental run
+    -- (uses >= to include records whose timestamp occurred since the last run of this model)
+    where order_purchase_timestamp::timestamp > (select max(order_purchase) from {{ this }})
+    and order_id is not null
+    {% endif %}
     
 ),
 
