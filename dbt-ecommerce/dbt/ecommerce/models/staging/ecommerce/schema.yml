@@ -3,7 +3,7 @@ version: 2
 sources:
     - name: ecommerce
       database: ecommerce
-      schema: ecommerce
+      schema: ecommerce2
 
       tables:
         - name: orders

@@ -1,4 +1,4 @@
-{{ config(materialized='table')}}
+{{ config(materialized='incremental')}}
 
 select
 -- surrogate key
@@ -16,3 +16,8 @@ select
     week_day
 
 from {{ ref('stg_date_orders') }}
+
+{% if is_incremental() %}
+
+where order_purchase > (select max(order_purchase) from {{ this }})
+{% endif %}

@@ -1,4 +1,4 @@
-{{ config(materialized='table')}}
+{{ config(materialized='incremental')}}
 
 with 
 
@@ -6,12 +6,20 @@ orders as (
 
     select *
     from {{ ref('stg_orders') }}
+    {% if is_incremental() %}
+
+    where order_purchase > (select max(order_purchase) from {{ this }})
+    {% endif %}
 ),
 
 order_items as (
 
     select *
     from {{ ref('stg_order_items') }}
+    {% if is_incremental() %}
+
+    where order_purchase > (select max(order_purchase) from {{ this }})
+    {% endif %}
 ),
 
 joined_fact as (
@@ -19,7 +27,7 @@ joined_fact as (
     select
         -- surrogate keys
         {{ dbt_utils.generate_surrogate_key(['orders.order_id','order_item_id']) }} as order_item_key,
-        {{ dbt_utils.generate_surrogate_key(['order_purchase']) }} as order_date_key,
+        {{ dbt_utils.generate_surrogate_key(['orders.order_purchase']) }} as order_date_key,
         {{ dbt_utils.generate_surrogate_key(['orders.customer_id']) }} as customer_key,
         {{ dbt_utils.generate_surrogate_key(['order_items.product_id']) }} as product_key,
         {{ dbt_utils.generate_surrogate_key(['order_items.seller_id']) }} as seller_key,

@@ -68,9 +68,9 @@ customers_kwargs.update(source_kwargs)
 customers_kwargs.update(target_kwargs)
 
 # Order Reviews args
-order_reviews_kwargs= dict(query_path = os.environ.get('PATH_REVIEWS'),
-                    target_schema = os.environ.get('REVIEWS_SCHEMA'),
-                    target_table = os.environ.get('REVIEWS_TABLE')
+order_reviews_kwargs= dict(query_path = os.environ.get('PATH_ORDER_REVIEWS'),
+                    target_schema = os.environ.get('ORDER_REVIEWS_SCHEMA'),
+                    target_table = os.environ.get('ORDER_REVIEWS_TABLE')
 )
 order_reviews_kwargs.update(source_kwargs)
 order_reviews_kwargs.update(target_kwargs)
@@ -91,8 +91,8 @@ default_args = {
 local_workflow = DAG(
     "ecommerce_incremental",
     schedule_interval="0 0 * * *",
-    start_date= datetime(2018,8,20),
-    end_date= datetime(2018,8,31),
+    start_date= datetime(2018,8,21),
+    end_date= datetime(2018,8,21),
     catchup=True,
     max_active_runs=1,
     default_args=default_args

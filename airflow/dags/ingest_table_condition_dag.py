@@ -31,10 +31,10 @@ target_kwargs= dict(target_host = os.environ.get('TARGET_HOST'),
 )
 
 # table - INSERT HERE!!---------------------------
-table = 'sellers'
-table_kwargs= dict(query_path = os.environ.get('PATH_SELLERS'),
-                    target_schema = os.environ.get('SELLERS_SCHEMA'),
-                    target_table = os.environ.get('SELLERS_TABLE')
+table = 'order_reviews'
+table_kwargs= dict(query_path = os.environ.get('PATH_ORDER_REVIEWS'),
+                    target_schema = os.environ.get('ORDER_REVIEWS_SCHEMA'),
+                    target_table = os.environ.get('ORDER_REVIEWS_TABLE')
 )
 table_kwargs.update(source_kwargs)
 table_kwargs.update(target_kwargs)
@@ -50,7 +50,7 @@ default_args = {
 local_workflow = DAG(
     "ingest_table",
     schedule_interval=None,
-    start_date= datetime(2024,3,2),
+    start_date= datetime(2024,3,8),
     catchup=False,
     max_active_runs=1,
     default_args=default_args
